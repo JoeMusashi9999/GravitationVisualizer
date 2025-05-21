@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar System Sim</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+    <!-- This bit contains the JS needed to create the animation -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <script type="module" src="./main.js"></script>
+
+  <!-- Sidebar for manipulation of the simulation -->
+    <div id="sidebar">
+  <button id="add-body">+ Add Celestial Body</button>
+  <form id="body-form"></form>
+  <button id="start-simulation">Start Simulation</button>
+</div>
+
+
+
+</body>
+</html>
