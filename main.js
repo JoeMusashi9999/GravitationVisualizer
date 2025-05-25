@@ -12,7 +12,7 @@ const G = 6.67430e-11;
 let bodyCount = 0;
 
 // === Body Class ===
-// Defines a celestial object with mass, position, velocity, and a visible trail
+// Defines an object with mass, position, velocity, and a visible trail
 class Body {
   constructor({ name, mass, radius, color, position, velocity }) {
     this.name = name;
@@ -29,7 +29,7 @@ class Body {
     this.mesh.position.copy(position);
     scene.add(this.mesh);
 
-    // Trail
+    // trail - should be about 1 rotation. In future might make it dynamically calculated too but idc rn
     this.trail = [];
     this.maxTrailLength = 500;
     this.trailGeometry = new THREE.BufferGeometry();
