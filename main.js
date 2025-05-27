@@ -7,6 +7,14 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 camera.position.z = 5;
+// === Lighting ===
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5, 5, 5);
+scene.add(light);
+
+const ambientLight = new THREE.AmbientLight(0x222222);
+scene.add(ambientLight);
+
 
 const G = 6.67430e-11;
 let bodyCount = 0;
@@ -154,6 +162,17 @@ document.getElementById("start-simulation").addEventListener("click", () => {
 
     bodies.push(body);
   }
+
+  
+  // Clear old meshes from scene
+  while (scene.children.length > 0) {
+    const obj = scene.children.pop();
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) obj.material.dispose();
+  }
+  scene.add(camera);
+  scene.add(light);
+  scene.add(ambientLight);
 
   runSimulation(bodies);
 });
