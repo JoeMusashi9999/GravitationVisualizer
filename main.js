@@ -117,10 +117,16 @@ Our function creates a 3 dimensional vector so that we can calculate forces in e
 document.getElementById("add-body").addEventListener("click", () => {
   const container = document.getElementById("body-form");
   const idPrefix = `body-${bodyCount}`;
+
   const block = document.createElement("div");
   block.classList.add("object-block");
+  block.setAttribute("data-body-id", idPrefix); // for easy deletion tracking
+
   block.innerHTML = `
-    <h3>Body ${bodyCount + 1}</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span class="body-name" contenteditable="false" style="cursor: pointer; font-weight: bold;">Body ${bodyCount + 1}</span>
+      <button type="button" class="delete-body" style="color: red; background: none; border: none; font-size: 1.2em;">×</button>
+    </div>
     <label>Color: <input type="color" id="${idPrefix}-color" value="#ffffff" /></label>
     <label>Radius: <input type="number" id="${idPrefix}-radius" value="0.2" /></label>
     <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e24" /></label>
@@ -131,9 +137,28 @@ document.getElementById("add-body").addEventListener("click", () => {
     <label>Velocity Y: <input type="number" id="${idPrefix}-vy" value="0" /></label>
     <label>Velocity Z: <input type="number" id="${idPrefix}-vz" value="0" /></label>
   `;
+
   container.appendChild(block);
+
+  // Editable name toggle
+  const nameEl = block.querySelector('.body-name');
+  nameEl.addEventListener('click', () => {
+    nameEl.contentEditable = true;
+    nameEl.focus();
+  });
+  nameEl.addEventListener('blur', () => {
+    nameEl.contentEditable = false;
+  });
+
+  // Delete body UI block
+  const deleteButton = block.querySelector('.delete-body');
+  deleteButton.addEventListener('click', () => {
+    block.remove();
+  });
+
   bodyCount++;
 });
+
 
 // === Simulation Start ===
 // Gathers form input values and initializes Body objects
@@ -151,9 +176,10 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     const vx = parseFloat(document.getElementById(`${prefix}-vx`).value);
     const vy = parseFloat(document.getElementById(`${prefix}-vy`).value);
     const vz = parseFloat(document.getElementById(`${prefix}-vz`).value);
-
+    const nameBody = document.querySelector(`#body-${i} .body-name`)?.innerText.trim() || `Body ${i + 1}`;
     const body = new Body({
-      name: `Body ${i + 1}`,
+      
+      name,
       mass,
       radius,
       color,
