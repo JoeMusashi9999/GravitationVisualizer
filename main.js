@@ -135,7 +135,7 @@ document.getElementById("add-body").addEventListener("click", () => {
     <label>Position Z: <input type="number" id="${idPrefix}-z" value="0" /></label>
     <label>Velocity X: <input type="number" id="${idPrefix}-vx" value="0" /></label>
     <label>Velocity Y: <input type="number" id="${idPrefix}-vy" value="0" /></label>
-    <label>Velocity Z: <input type="number" id="${idPrefix}-vz" value="0" /></label>
+    <label>Velocity HAHA: <input type="number" id="${idPrefix}-vz" value="0" /></label>
   `;
 
   container.appendChild(block);
