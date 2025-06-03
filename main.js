@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-
+let bodies = [];
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
@@ -164,16 +164,23 @@ document.getElementById("add-body").addEventListener("click", () => {
 // === Simulation Start ===
 // Gathers form input values and initializes Body objects
 document.getElementById("start-simulation").addEventListener("click", () => {
-  // Reset the bodies array
+  // 1️⃣ Reset the global bodies array
   bodies = [];
 
-  // Grab every existing object-block (skips deleted ones)
+  // 3️⃣ Clear the scene and re-add camera & lights
+  scene.clear();
+  scene.add(camera);
+  scene.add(light);
+  scene.add(ambientLight);
+
+  // 2️⃣ Loop over each .object-block in the DOM
   const blocks = document.querySelectorAll(".object-block");
   blocks.forEach((block, i) => {
     const prefix = block.getAttribute("data-body-id");
+    const nameEl = block.querySelector(".body-name");
+    const name = nameEl ? nameEl.innerText.trim() : `Body ${i + 1}`;
 
-    // Read values scoped to this block
-    const name   = block.querySelector(".body-name").innerText.trim();
+    // Read inputs from THIS block only
     const mass   = parseFloat(block.querySelector(`#${prefix}-mass`).value);
     const radius = parseFloat(block.querySelector(`#${prefix}-radius`).value);
     const color  = new THREE.Color(block.querySelector(`#${prefix}-color`).value);
@@ -194,7 +201,7 @@ document.getElementById("start-simulation").addEventListener("click", () => {
       velocity: new THREE.Vector3(vx, vy, vz),
     });
 
-    // Optionally compute trail length based on initial orbit
+    // Optional: compute a trail length from circular‐orbit approximation
     const r = body.position.length();
     const v = body.velocity.length() || 1;
     body.maxTrailLength = Math.floor((2 * Math.PI * r / v) / 3600);
@@ -202,7 +209,7 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     bodies.push(body);
   });
 
-  // (Re)start the simulation with the fresh list
+  // Finally, (re)start the simulation loop
   runSimulation(bodies);
 });
 
