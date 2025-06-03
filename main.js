@@ -124,7 +124,7 @@ document.getElementById("add-body").addEventListener("click", () => {
 
   block.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span class="body-name" contenteditable="false" style="cursor: pointer; font-weight: bold;">Body ${bodyCount + 1}</span>
+      <span class="body-name" contenteditable="false" style="cursor: pointer; font-weight: bold;">Body ${bodyCount += 1}</span>
       <button type="button" class="delete-body" style="color: red; background: none; border: none; font-size: 1.2em;">×</button>
     </div>
     <label>Color: <input type="color" id="${idPrefix}-color" value="#ffffff" /></label>
@@ -135,7 +135,7 @@ document.getElementById("add-body").addEventListener("click", () => {
     <label>Position Z: <input type="number" id="${idPrefix}-z" value="0" /></label>
     <label>Velocity X: <input type="number" id="${idPrefix}-vx" value="0" /></label>
     <label>Velocity Y: <input type="number" id="${idPrefix}-vy" value="0" /></label>
-    <label>Velocity HAHA: <input type="number" id="${idPrefix}-vz" value="0" /></label>
+    <label>Velocity Z: <input type="number" id="${idPrefix}-vz" value="0" /></label>
   `;
 
   container.appendChild(block);
@@ -154,6 +154,7 @@ document.getElementById("add-body").addEventListener("click", () => {
   const deleteButton = block.querySelector('.delete-body');
   deleteButton.addEventListener('click', () => {
     block.remove();
+    bodyCount -= 1;
   });
 
   bodyCount++;
@@ -163,22 +164,28 @@ document.getElementById("add-body").addEventListener("click", () => {
 // === Simulation Start ===
 // Gathers form input values and initializes Body objects
 document.getElementById("start-simulation").addEventListener("click", () => {
-  const bodies = [];
+  // Reset the bodies array
+  bodies = [];
 
-  for (let i = 0; i < bodyCount; i++) {
-    const prefix = `body-${i}`;
-    const mass = parseFloat(document.getElementById(`${prefix}-mass`).value);
-    const radius = parseFloat(document.getElementById(`${prefix}-radius`).value);
-    const color = new THREE.Color(document.getElementById(`${prefix}-color`).value);
-    const x = parseFloat(document.getElementById(`${prefix}-x`).value);
-    const y = parseFloat(document.getElementById(`${prefix}-y`).value);
-    const z = parseFloat(document.getElementById(`${prefix}-z`).value);
-    const vx = parseFloat(document.getElementById(`${prefix}-vx`).value);
-    const vy = parseFloat(document.getElementById(`${prefix}-vy`).value);
-    const vz = parseFloat(document.getElementById(`${prefix}-vz`).value);
-    const nameBody = document.querySelector(`#body-${i} .body-name`)?.innerText.trim() || `Body ${i + 1}`;
+  // Grab every existing object-block (skips deleted ones)
+  const blocks = document.querySelectorAll(".object-block");
+  blocks.forEach((block, i) => {
+    const prefix = block.getAttribute("data-body-id");
+
+    // Read values scoped to this block
+    const name   = block.querySelector(".body-name").innerText.trim();
+    const mass   = parseFloat(block.querySelector(`#${prefix}-mass`).value);
+    const radius = parseFloat(block.querySelector(`#${prefix}-radius`).value);
+    const color  = new THREE.Color(block.querySelector(`#${prefix}-color`).value);
+    const x      = parseFloat(block.querySelector(`#${prefix}-x`).value);
+    const y      = parseFloat(block.querySelector(`#${prefix}-y`).value);
+    const z      = parseFloat(block.querySelector(`#${prefix}-z`).value);
+    const vx     = parseFloat(block.querySelector(`#${prefix}-vx`).value);
+    const vy     = parseFloat(block.querySelector(`#${prefix}-vy`).value);
+    const vz     = parseFloat(block.querySelector(`#${prefix}-vz`).value);
+
+    // Instantiate the Body
     const body = new Body({
-      
       name,
       mass,
       radius,
@@ -187,27 +194,18 @@ document.getElementById("start-simulation").addEventListener("click", () => {
       velocity: new THREE.Vector3(vx, vy, vz),
     });
 
+    // Optionally compute trail length based on initial orbit
     const r = body.position.length();
-    const v = body.velocity.length();
-    const T = 2 * Math.PI * r / v;
-    body.maxTrailLength = Math.floor(T / 3600); // 1 hr per frame
+    const v = body.velocity.length() || 1;
+    body.maxTrailLength = Math.floor((2 * Math.PI * r / v) / 3600);
 
     bodies.push(body);
-  }
+  });
 
-  
-  // Clear old meshes from scene
-  while (scene.children.length > 0) {
-    const obj = scene.children.pop();
-    if (obj.geometry) obj.geometry.dispose();
-    if (obj.material) obj.material.dispose();
-  }
-  scene.add(camera);
-  scene.add(light);
-  scene.add(ambientLight);
-
+  // (Re)start the simulation with the fresh list
   runSimulation(bodies);
 });
+
 
 // === Animation Loop ===
 // Computes gravity and updates body positions on each frame
