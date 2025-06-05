@@ -13,7 +13,8 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 camera.position.z = 5;
-// === Lighting ===
+
+// Lighting
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(5, 5, 5);
 scene.add(light);
@@ -132,7 +133,7 @@ document.getElementById("add-body").addEventListener("click", () => {
     <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e24" /></label>
     <label>Position X: <input type="number" id="${idPrefix}-x" value="${bodyCount * 3}" /></label>
     <label>Position Y: <input type="number" id="${idPrefix}-y" value="0" /></label>
-    <label>Position Z: <input type="number" id="${idPrefix}-z" value="0" /></label>
+    <label>Position Z: <input type="number" id="${idPrefix}-z" value="0" /></label>,
     <label>Velocity X: <input type="number" id="${idPrefix}-vx" value="0" /></label>
     <label>Velocity Y: <input type="number" id="${idPrefix}-vy" value="0" /></label>
     <label>Velocity Z: <input type="number" id="${idPrefix}-vz" value="0" /></label>
@@ -161,26 +162,29 @@ document.getElementById("add-body").addEventListener("click", () => {
 });
 
 
+
+
 // === Simulation Start ===
 // Gathers form input values and initializes Body objects
 document.getElementById("start-simulation").addEventListener("click", () => {
-  // 1️⃣ Reset the global bodies array
+  // Reset the bodies array so we don’t keep stacking old ones
   bodies = [];
 
-  // 3️⃣ Clear the scene and re-add camera & lights
+  // Completely clear out the scene, then re‐add camera and lights
   scene.clear();
   scene.add(camera);
   scene.add(light);
   scene.add(ambientLight);
 
-  // 2️⃣ Loop over each .object-block in the DOM
+  // Loop over every existing “.object-block” (this skips any deleted ones!)
   const blocks = document.querySelectorAll(".object-block");
   blocks.forEach((block, i) => {
     const prefix = block.getAttribute("data-body-id");
+    // Read the user’s custom name (or default to “Body i+1”)
     const nameEl = block.querySelector(".body-name");
     const name = nameEl ? nameEl.innerText.trim() : `Body ${i + 1}`;
 
-    // Read inputs from THIS block only
+    // READ each input *inside* this exact block
     const mass   = parseFloat(block.querySelector(`#${prefix}-mass`).value);
     const radius = parseFloat(block.querySelector(`#${prefix}-radius`).value);
     const color  = new THREE.Color(block.querySelector(`#${prefix}-color`).value);
@@ -191,7 +195,7 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     const vy     = parseFloat(block.querySelector(`#${prefix}-vy`).value);
     const vz     = parseFloat(block.querySelector(`#${prefix}-vz`).value);
 
-    // Instantiate the Body
+    // Create a new Body with exactly those parameters
     const body = new Body({
       name,
       mass,
@@ -201,15 +205,15 @@ document.getElementById("start-simulation").addEventListener("click", () => {
       velocity: new THREE.Vector3(vx, vy, vz),
     });
 
-    // Optional: compute a trail length from circular‐orbit approximation
+    // estimates a circular‐orbit trail length
     const r = body.position.length();
-    const v = body.velocity.length() || 1;
+    const v = body.velocity.length() || 1; // avoid division by 0
     body.maxTrailLength = Math.floor((2 * Math.PI * r / v) / 3600);
 
     bodies.push(body);
   });
 
-  // Finally, (re)start the simulation loop
+  // Restart the animation loop on the fresh “bodies” array
   runSimulation(bodies);
 });
 
