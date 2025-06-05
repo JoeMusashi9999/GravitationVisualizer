@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 let bodies = [];
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -12,6 +13,19 @@ window.addEventListener('DOMContentLoaded', () => {
     console.error("Canvas container not found!");
   }
 });
+
+// === Orbit Controls ===
+// Allow click‐and‐drag to orbit and scroll to zoom:
+const controls = new OrbitControls(camera, renderer.domElement);
+
+// Optional tweaks (feel free to adjust)
+controls.enableDamping = true;       // smooth motion
+controls.dampingFactor = 0.05;
+controls.minDistance = 1;            // how close you can zoom in
+controls.maxDistance = 100;          // how far you can zoom out
+controls.enablePan = false;          // disable right‐click‐pan if you only want orbit/zoom
+
+
 camera.position.z = 5;
 
 // Lighting
@@ -185,15 +199,15 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     const name = nameEl ? nameEl.innerText.trim() : `Body ${i + 1}`;
 
     // READ each input *inside* this exact block
-    const mass   = parseFloat(block.querySelector(`#${prefix}-mass`).value);
+    const mass = parseFloat(block.querySelector(`#${prefix}-mass`).value);
     const radius = parseFloat(block.querySelector(`#${prefix}-radius`).value);
-    const color  = new THREE.Color(block.querySelector(`#${prefix}-color`).value);
-    const x      = parseFloat(block.querySelector(`#${prefix}-x`).value);
-    const y      = parseFloat(block.querySelector(`#${prefix}-y`).value);
-    const z      = parseFloat(block.querySelector(`#${prefix}-z`).value);
-    const vx     = parseFloat(block.querySelector(`#${prefix}-vx`).value);
-    const vy     = parseFloat(block.querySelector(`#${prefix}-vy`).value);
-    const vz     = parseFloat(block.querySelector(`#${prefix}-vz`).value);
+    const color = new THREE.Color(block.querySelector(`#${prefix}-color`).value);
+    const x = parseFloat(block.querySelector(`#${prefix}-x`).value);
+    const y = parseFloat(block.querySelector(`#${prefix}-y`).value);
+    const z = parseFloat(block.querySelector(`#${prefix}-z`).value);
+    const vx = parseFloat(block.querySelector(`#${prefix}-vx`).value);
+    const vy = parseFloat(block.querySelector(`#${prefix}-vy`).value);
+    const vz = parseFloat(block.querySelector(`#${prefix}-vz`).value);
 
     // Create a new Body with exactly those parameters
     const body = new Body({
@@ -224,7 +238,8 @@ function runSimulation(bodies) {
   function animate() {
     requestAnimationFrame(animate);
     computeGravitationalForces(bodies);
-    for (let body of bodies) body.update(3600);
+    bodies.forEach(body => body.update(3600));
+    controls.update();
     renderer.render(scene, camera);
   }
   animate();
