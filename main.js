@@ -172,7 +172,6 @@ document.getElementById("add-body").addEventListener("click", () => {
     bodyCount -= 1;
   });
 
-  bodyCount++;
 });
 
 
