@@ -18,6 +18,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 });
 
+const TIME_STEP = 1;     // 10 second per frame
+const G = 6.67430e-11;
+let bodyCount = 0;
+let isPaused = true;
 // === Orbit Controls ===
 // Allow click‐and‐drag to orbit and scroll to zoom:
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -60,9 +64,20 @@ scene.add(light);
 const ambientLight = new THREE.AmbientLight(0x222222);
 scene.add(ambientLight);
 
-const TIME_STEP = 10;     // 10 second per frame
-const G = 6.67430e-11;
-let bodyCount = 0;
+const pauseBtn = document.getElementById('pause-btn');
+const resumeBtn = document.getElementById('resume-btn');
+pauseBtn.addEventListener('click', () => {
+  isPaused = true;
+  pauseBtn.style.display = 'none';
+  resumeBtn.style.display = '';
+});
+
+resumeBtn.addEventListener('click', () => {
+  isPaused = false;
+  resumeBtn.style.display = 'none';
+  pauseBtn.style.display = '';
+});
+
 
 // === Body Class ===
 // Defines an object with mass, position, velocity, and a visible trail
@@ -264,8 +279,10 @@ function runSimulation(bodies) {
   function animate() {
     requestAnimationFrame(animate);
 
-    computeGravitationalForces(bodies);
-    bodies.forEach(body => body.update(TIME_STEP));
+    if (!isPaused) {
+      computeGravitationalForces(bodies);
+      bodies.forEach(body => body.update(TIME_STEP));
+    }
     controls.update();
     renderer.render(scene, camera);
   }
