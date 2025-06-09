@@ -12,6 +12,14 @@ window.addEventListener('DOMContentLoaded', () => {
   } else {
     console.error("Canvas container not found!");
   }
+  // === Time Step Control ===
+const timeStepSlider = document.getElementById('time-step-slider');
+const timeStepValue = document.getElementById('time-step-value');
+
+timeStepSlider.addEventListener('input', () => {
+  TIME_STEP = Number(timeStepSlider.value);
+  timeStepValue.textContent = TIME_STEP;
+});
 });
 
 // === Orbit Controls ===
@@ -190,14 +198,7 @@ document.getElementById("add-body").addEventListener("click", () => {
 });
 
 
-// === Time Step Control ===
-const timeStepSlider = document.getElementById('time-step-slider');
-const timeStepValue = document.getElementById('time-step-value');
 
-timeStepSlider.addEventListener('input', () => {
-  TIME_STEP = Number(timeStepSlider.value);
-  timeStepValue.textContent = TIME_STEP;
-});
 
 // === Simulation Start ===
 // Gathers form input values and initializes Body objects
@@ -226,9 +227,9 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     const x = parseFloat(block.querySelector(`#${prefix}-x`).value);
     const y = parseFloat(block.querySelector(`#${prefix}-y`).value);
     const z = parseFloat(block.querySelector(`#${prefix}-z`).value);
-    const vx = parseFloat(block.querySelector(`#${prefix}-vx`).value);
-    const vy = parseFloat(block.querySelector(`#${prefix}-vy`).value);
-    const vz = parseFloat(block.querySelector(`#${prefix}-vz`).value);
+    const vx = parseFloat(block.querySelector(`#${prefix}-vx`).value)*0.0001;
+    const vy = parseFloat(block.querySelector(`#${prefix}-vy`).value)*0.0001;
+    const vz = parseFloat(block.querySelector(`#${prefix}-vz`).value)*0.0001;
 
     // Create a new Body with exactly those parameters
     const body = new Body({
