@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Solar System Sim</title>
   <style>
     body {
-        margin: 0;
-        display: flex;
-        overflow: hidden;
-        font-family: sans-serif;
+      margin: 0;
+      display: flex;
+      overflow: hidden;
+      font-family: sans-serif;
     }
 
     #sidebar {
@@ -52,20 +53,53 @@
     button:hover {
       background-color: #555;
     }
+
     #canvas-container {
       width: 80vw;
       height: 100vh;
       overflow: hidden;
       position: relative;
     }
-    
+
     canvas {
       width: 100%;
       height: 100%;
       display: block;
     }
+
+    #canvas-container {
+      position: relative;
+      /* so absolute children position correctly */
+    }
+
+    #zoom-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 100;
+    }
+
+    #zoom-controls button {
+      width: 30px;
+      height: 30px;
+      background-color: rgba(51, 51, 51, 0.8);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2em;
+      line-height: 1;
+      padding: 0;
+    }
+
+    #zoom-controls button:hover {
+      background-color: rgba(85, 85, 85, 0.8);
+    }
   </style>
 </head>
+
 <body>
   <!-- Import Three.js as a module -->
   <script type="importmap">
@@ -78,12 +112,25 @@
 
   <!-- Simulation controls sidebar -->
   <div id="sidebar">
+
+    <!-- Time Step Slider -->
+    <div id="time-step-control" style="margin-bottom: 1em;">
+      <label for="time-step-slider">
+        Time Step (s): <span id="time-step-value">3600</span>
+      </label>
+      <input type="range" id="time-step-slider" min="1" max="86400" value="3600" step="1" />
+    </div>
+
     <button id="add-body">+ Add Celestial Body</button>
     <form id="body-form"></form>
     <button id="start-simulation">Start Simulation</button>
   </div>
-  <div id="canvas-container"></div>
+
+  <div id="canvas-container">
+    <div id="zoom-controls"><button id="zoom-in">+</button><button id="zoom-out">−</button></div>
+  </div>
   <!-- Simulation rendering script -->
   <script type="module" src="./main.js"></script>
 </body>
+
 </html>

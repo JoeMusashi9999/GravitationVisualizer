@@ -17,16 +17,31 @@ window.addEventListener('DOMContentLoaded', () => {
 // === Orbit Controls ===
 // Allow click‐and‐drag to orbit and scroll to zoom:
 const controls = new OrbitControls(camera, renderer.domElement);
-
-// Optional tweaks (feel free to adjust)
 controls.enableDamping = true;       // smooth motion
 controls.dampingFactor = 0.05;
 controls.minDistance = 1;            // how close you can zoom in
 controls.maxDistance = 100;          // how far you can zoom out
-controls.enablePan = false;          // disable right‐click‐pan if you only want orbit/zoom
 
 
-camera.position.z = 5;
+// Zoom in/out buttons
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+
+zoomInBtn.addEventListener('click', () => {
+  // Move camera 10% closer
+  camera.position.multiplyScalar(0.9);
+  controls.update();
+});
+
+zoomOutBtn.addEventListener('click', () => {
+  // Move camera 10% farther
+  camera.position.multiplyScalar(1.1);
+  controls.update();
+});
+
+
+// Camera positioning
+camera.position.set(0, 0, 20);
 
 // Lighting
 const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -36,7 +51,7 @@ scene.add(light);
 const ambientLight = new THREE.AmbientLight(0x222222);
 scene.add(ambientLight);
 
-
+const TIME_STEP = 10;     // 10 second per frame
 const G = 6.67430e-11;
 let bodyCount = 0;
 
@@ -175,7 +190,14 @@ document.getElementById("add-body").addEventListener("click", () => {
 });
 
 
+// === Time Step Control ===
+const timeStepSlider = document.getElementById('time-step-slider');
+const timeStepValue = document.getElementById('time-step-value');
 
+timeStepSlider.addEventListener('input', () => {
+  TIME_STEP = Number(timeStepSlider.value);
+  timeStepValue.textContent = TIME_STEP;
+});
 
 // === Simulation Start ===
 // Gathers form input values and initializes Body objects
@@ -197,7 +219,7 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     const nameEl = block.querySelector(".body-name");
     const name = nameEl ? nameEl.innerText.trim() : `Body ${i + 1}`;
 
-    // READ each input *inside* this exact block
+    // read each input 
     const mass = parseFloat(block.querySelector(`#${prefix}-mass`).value);
     const radius = parseFloat(block.querySelector(`#${prefix}-radius`).value);
     const color = new THREE.Color(block.querySelector(`#${prefix}-color`).value);
@@ -234,10 +256,14 @@ document.getElementById("start-simulation").addEventListener("click", () => {
 // === Animation Loop ===
 // Computes gravity and updates body positions on each frame
 function runSimulation(bodies) {
+  // draw the scene once at t=0
+  renderer.render(scene, camera);
+
   function animate() {
     requestAnimationFrame(animate);
+
     computeGravitationalForces(bodies);
-    bodies.forEach(body => body.update(3600));
+    bodies.forEach(body => body.update(TIME_STEP));
     controls.update();
     renderer.render(scene, camera);
   }
