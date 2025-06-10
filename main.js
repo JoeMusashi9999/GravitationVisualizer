@@ -1,57 +1,61 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from "three";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 let bodies = [];
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("canvas-container");
   if (container) {
     container.appendChild(renderer.domElement);
   } else {
     console.error("Canvas container not found!");
-    const timeStepSlider = document.getElementById('time-step-slider');
-    const timeStepValue = document.getElementById('time-step-value');
   }
-
-
-
-  timeStepSlider.addEventListener('input', () => {
-    TIME_STEP = Number(timeStepSlider.value);
-    timeStepValue.textContent = TIME_STEP;
-  });
 });
 
-const TIME_STEP = 10;     // 10 second per frame
-const G = 6.67430e-11;
+const TIME_STEP = 10; // 10 second per frame
+const G = 6.6743e-11;
 let bodyCount = 0;
 let isPaused = true;
+const MAX_BODIES = 200; // maximum allowed bodies before abort
+let simulationRunning = true;
 // === Orbit Controls ===
 // Allow click‐and‐drag to orbit and scroll to zoom:
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;       // smooth motion
+controls.enableDamping = true; // smooth motion
 controls.dampingFactor = 0.05;
-controls.minDistance = 1;            // how close you can zoom in
-controls.maxDistance = 100;          // how far you can zoom out
+controls.minDistance = 1; // how close you can zoom in
+controls.maxDistance = 100; // how far you can zoom out
 
+const timeStepSlider = document.getElementById("time-step-slider");
+const timeStepValue = document.getElementById("time-step-value");
+// Time slider
+timeStepSlider.addEventListener("input", () => {
+  TIME_STEP = Number(timeStepSlider.value);
+  timeStepValue.textContent = TIME_STEP;
+});
 
 // Zoom in/out buttons
-const zoomInBtn = document.getElementById('zoom-in');
-const zoomOutBtn = document.getElementById('zoom-out');
+const zoomInBtn = document.getElementById("zoom-in");
+const zoomOutBtn = document.getElementById("zoom-out");
 
-zoomInBtn.addEventListener('click', () => {
+zoomInBtn.addEventListener("click", () => {
   // Move camera 10% closer
   camera.position.multiplyScalar(0.9);
   controls.update();
 });
 
-zoomOutBtn.addEventListener('click', () => {
+zoomOutBtn.addEventListener("click", () => {
   // Move camera 10% farther
   camera.position.multiplyScalar(1.1);
   controls.update();
 });
-
 
 // Camera positioning
 camera.position.set(0, 0, 20);
@@ -64,20 +68,19 @@ scene.add(light);
 const ambientLight = new THREE.AmbientLight(0x222222);
 scene.add(ambientLight);
 
-const pauseBtn = document.getElementById('pause-btn');
-const resumeBtn = document.getElementById('resume-btn');
-pauseBtn.addEventListener('click', () => {
+const pauseBtn = document.getElementById("pause-btn");
+const resumeBtn = document.getElementById("resume-btn");
+pauseBtn.addEventListener("click", () => {
   isPaused = true;
-  pauseBtn.style.display = 'none';
-  resumeBtn.style.display = '';
+  pauseBtn.style.display = "none";
+  resumeBtn.style.display = "";
 });
 
-resumeBtn.addEventListener('click', () => {
+resumeBtn.addEventListener("click", () => {
   isPaused = false;
-  resumeBtn.style.display = 'none';
-  pauseBtn.style.display = '';
+  resumeBtn.style.display = "none";
+  pauseBtn.style.display = "";
 });
-
 
 // === Body Class ===
 // Defines an object with mass, position, velocity, and a visible trail
@@ -122,7 +125,10 @@ class Body {
       positions.set([this.trail[i].x, this.trail[i].y, this.trail[i].z], i * 3);
     }
 
-    this.trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    this.trailGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3)
+    );
     this.trailGeometry.setDrawRange(0, this.trail.length);
     this.trailGeometry.attributes.position.needsUpdate = true;
   }
@@ -146,7 +152,7 @@ function computeGravitationalForces(bodies) {
 
       const r = new THREE.Vector3().subVectors(bj.position, bi.position);
       const dist = r.length() + 1e-6;
-      const forceMag = G * bi.mass * bj.mass / (dist * dist);
+      const forceMag = (G * bi.mass * bj.mass) / (dist * dist);
       const force = r.normalize().multiplyScalar(forceMag);
 
       bi.applyForce(force);
@@ -159,12 +165,109 @@ This program is conceptually pretty simple. We define our constant of gravitatio
 Our function creates a 3 dimensional vector so that we can calculate forces in each direction. A problem I will run into in this will be the fact that 
 */
 
+// === Collision & Fragmentation ===
+function handleCollisions(bodies) {
+  const fragments = [];
 
+  // mark bodies to remove
+  const toRemove = new Set();
 
+  // check every pair once
+  for (let i = 0; i < bodies.length; i++) {
+    for (let j = i + 1; j < bodies.length; j++) {
+      const A = bodies[i],
+        B = bodies[j];
+      const dist = A.position.distanceTo(B.position);
 
+      // collision if distance < sum of radii
+      if (dist < A.radius + B.radius) {
+        // 1) Compute combined momentum
+        const totalMass = A.mass + B.mass;
+        const velocity = A.velocity
+          .clone()
+          .multiplyScalar(A.mass)
+          .add(B.velocity.clone().multiplyScalar(B.mass))
+          .divideScalar(totalMass);
 
+        // 2) Number of fragments
+        const N = Math.floor(Math.random() * 10);
+        for (let k = 0; k < N; k++) {
+          const angle = (k / N) * Math.PI * 2;
+          const offset = new THREE.Vector3(
+            Math.cos(angle),
+            Math.sin(angle),
+            Math.random() - 0.5
+          ).multiplyScalar((A.radius + B.radius) * 0.5);
 
+          // each fragment gets a share of mass
+          const m = totalMass / N;
+          const r = Math.cbrt(m) * 0.1; // scale radius
 
+          // small random velocity kick
+          const vKick = offset
+            .clone()
+            .normalize()
+            .multiplyScalar(velocity.length() * 0.2);
+
+          fragments.push(
+            new Body({
+              name: `Frag`,
+              mass: m,
+              radius: r,
+              color: 0xff6600,
+              position: A.position.clone().add(offset),
+              velocity: velocity.clone().add(vKick),
+            })
+          );
+        }
+
+        // mark originals for removal
+        toRemove.add(A);
+        toRemove.add(B);
+      }
+    }
+  }
+
+  // remove collided bodies
+  for (let b of toRemove) {
+    const idx = bodies.indexOf(b);
+    if (idx !== -1) {
+      // dispose mesh and trail if needed
+      scene.remove(b.mesh);
+      scene.remove(b.trailLine);
+      bodies.splice(idx, 1);
+    }
+  }
+
+  // add new fragments
+  bodies.push(...fragments);
+}
+
+// Random Color Hex
+function generateRandomHexColor() {
+  while (true) {
+    const h = Math.random() * 360; // hue 0–360°
+    if (h >= 20 && h <= 40) continue; // exclude browns
+    const s = Math.random() * 50 + 50; // saturation 50–100%
+    const l = Math.random() * 40 + 30; // lightness 30–70%
+    return hslToHex(h, s, l);
+  }
+}
+
+// HSL to HEX
+function hslToHex(h, s, l) {
+  s /= 100;
+  l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
 
 // === UI Handling ===
 // Handles user input for adding new celestial bodies dynamically
@@ -178,13 +281,15 @@ document.getElementById("add-body").addEventListener("click", () => {
 
   block.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span class="body-name" contenteditable="false" style="cursor: pointer; font-weight: bold;">Body ${bodyCount += 1}</span>
+      <span class="body-name" contenteditable="false" style="cursor: pointer; font-weight: bold;">Body ${(bodyCount += 1)}</span>
       <button type="button" class="delete-body" style="color: red; background: none; border: none; font-size: 1.2em;">×</button>
     </div>
-    <label>Color: <input type="color" id="${idPrefix}-color" value="#ffffff" /></label>
+    <label>Color: <input type="color" id="${idPrefix}-color" value="${generateRandomHexColor()}" /></label>
     <label>Radius: <input type="number" id="${idPrefix}-radius" value="0.2" /></label>
-    <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e24" /></label>
-    <label>Position X: <input type="number" id="${idPrefix}-x" value="${bodyCount * 3}" /></label>
+    <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e4" /></label>
+    <label>Position X: <input type="number" id="${idPrefix}-x" value="${
+    (bodyCount - 1) * 3
+  }" /></label>
     <label>Position Y: <input type="number" id="${idPrefix}-y" value="0" /></label>
     <label>Position Z: <input type="number" id="${idPrefix}-z" value="0" /></label>,
     <label>Velocity X: <input type="number" id="${idPrefix}-vx" value="0" /></label>
@@ -195,31 +300,28 @@ document.getElementById("add-body").addEventListener("click", () => {
   container.appendChild(block);
 
   // Editable name toggle
-  const nameEl = block.querySelector('.body-name');
-  nameEl.addEventListener('click', () => {
+  const nameEl = block.querySelector(".body-name");
+  nameEl.addEventListener("click", () => {
     nameEl.contentEditable = true;
     nameEl.focus();
   });
-  nameEl.addEventListener('blur', () => {
+  nameEl.addEventListener("blur", () => {
     nameEl.contentEditable = false;
   });
 
   // Delete body UI block
-  const deleteButton = block.querySelector('.delete-body');
-  deleteButton.addEventListener('click', () => {
+  const deleteButton = block.querySelector(".delete-body");
+  deleteButton.addEventListener("click", () => {
     block.remove();
     bodyCount -= 1;
   });
-
 });
-
-
-
 
 // === Simulation Start ===
 // Gathers form input values and initializes Body objects
 document.getElementById("start-simulation").addEventListener("click", () => {
   // Reset the bodies array so we don’t keep stacking old ones
+  simulationRunning = true; // allow the next run
   bodies = [];
 
   // Completely clear out the scene, then re‐add camera and lights
@@ -236,10 +338,12 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     const nameEl = block.querySelector(".body-name");
     const name = nameEl ? nameEl.innerText.trim() : `Body ${i + 1}`;
 
-    // read each input 
+    // read each input
     const mass = parseFloat(block.querySelector(`#${prefix}-mass`).value);
     const radius = parseFloat(block.querySelector(`#${prefix}-radius`).value);
-    const color = new THREE.Color(block.querySelector(`#${prefix}-color`).value);
+    const color = new THREE.Color(
+      block.querySelector(`#${prefix}-color`).value
+    );
     const x = parseFloat(block.querySelector(`#${prefix}-x`).value);
     const y = parseFloat(block.querySelector(`#${prefix}-y`).value);
     const z = parseFloat(block.querySelector(`#${prefix}-z`).value);
@@ -260,7 +364,7 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     // estimates a circular‐orbit trail length
     const r = body.position.length();
     const v = body.velocity.length() || 1; // avoid division by 0
-    body.maxTrailLength = Math.floor((2 * Math.PI * r / v) / 3600);
+    body.maxTrailLength = Math.floor((2 * Math.PI * r) / v / 3600);
 
     bodies.push(body);
   });
@@ -269,7 +373,6 @@ document.getElementById("start-simulation").addEventListener("click", () => {
   runSimulation(bodies);
 });
 
-
 // === Animation Loop ===
 // Computes gravity and updates body positions on each frame
 function runSimulation(bodies) {
@@ -277,11 +380,20 @@ function runSimulation(bodies) {
   renderer.render(scene, camera);
 
   function animate() {
+    if (!simulationRunning) return;
+
+    // Abort if too many bodies
+    if (bodies.length > MAX_BODIES) {
+      simulationRunning = false;
+      alert(`Simulation aborted: exceeded ${MAX_BODIES} bodies.`);
+      return;
+    }
     requestAnimationFrame(animate);
 
     if (!isPaused) {
       computeGravitationalForces(bodies);
-      bodies.forEach(body => body.update(TIME_STEP));
+      handleCollisions(bodies);
+      bodies.forEach((body) => body.update(TIME_STEP));
     }
     controls.update();
     renderer.render(scene, camera);
