@@ -19,7 +19,8 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-const TIME_STEP = 10; // 10 second per frame
+const COLLISION_COOLDOWN_FRAMES = 3;
+let TIME_STEP = 10; // 10 second per frame
 const G = 6.6743e-11;
 let bodyCount = 0;
 let isPaused = true;
@@ -86,6 +87,7 @@ resumeBtn.addEventListener("click", () => {
 // Defines an object with mass, position, velocity, and a visible trail
 class Body {
   constructor({ name, mass, radius, color, position, velocity }) {
+    this.collisionCooldown = 0;
     this.name = name;
     this.mass = mass;
     this.radius = radius;
@@ -134,6 +136,9 @@ class Body {
   }
 
   update(dt) {
+    if (this.collisionCooldown > 0) {
+      this.collisionCooldown--;
+    }
     this.velocity.add(this.acceleration.clone().multiplyScalar(dt));
     this.position.add(this.velocity.clone().multiplyScalar(dt));
     this.mesh.position.copy(this.position);
@@ -177,6 +182,7 @@ function handleCollisions(bodies) {
     for (let j = i + 1; j < bodies.length; j++) {
       const A = bodies[i],
         B = bodies[j];
+      if (A.collisionCooldown > 0 || B.collisionCooldown > 0) continue;
       const dist = A.position.distanceTo(B.position);
 
       // collision if distance < sum of radii
@@ -190,7 +196,9 @@ function handleCollisions(bodies) {
           .divideScalar(totalMass);
 
         // 2) Number of fragments
-        const N = Math.floor(Math.random() * 10);
+        const N = Math.floor(Math.random() * 10)+5;
+        const totalVolume = Math.pow(A.radius, 3) + Math.pow(B.radius, 3);
+        const fragRadius = Math.cbrt(totalVolume / N);
         for (let k = 0; k < N; k++) {
           const angle = (k / N) * Math.PI * 2;
           const offset = new THREE.Vector3(
@@ -212,8 +220,8 @@ function handleCollisions(bodies) {
           fragments.push(
             new Body({
               name: `Frag`,
-              mass: m,
-              radius: r,
+              mass: totalMass / N, // keep mass share if you like
+              radius: fragRadius*0.1,
               color: 0xff6600,
               position: A.position.clone().add(offset),
               velocity: velocity.clone().add(vKick),
