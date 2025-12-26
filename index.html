@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
+<!- Sorry, I don't really comment my code :/ ->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -98,14 +98,14 @@
       background-color: rgba(85, 85, 85, 0.8);
     }
 
-    /* Play/Pause controls at bottom center */
+
     #play-pause-controls {
       position: absolute;
       bottom: 20px;
       width: 100%;
       text-align: center;
       pointer-events: none;
-      /* pass clicks through to canvas except buttons */
+      
     }
 
     #play-pause-controls button {
@@ -126,7 +126,7 @@
 </head>
 
 <body>
-  <!-- Import Three.js as a module -->
+ 
   <script type="importmap">
     {
       "imports": {
@@ -135,10 +135,10 @@
     }
   </script>
 
-  <!-- Simulation controls sidebar -->
+
   <div id="sidebar">
 
-    <!-- Time Step Slider -->
+    
     <div id="time-step-control" style="margin-bottom: 1em;">
       <label for="time-step-slider">
         Time Step (s): <span id="time-step-value">30</span>
