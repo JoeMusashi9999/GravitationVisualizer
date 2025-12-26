@@ -24,44 +24,35 @@ let TIME_STEP = 10; // 10 second per frame
 const G = 6.6743e-11;
 let bodyCount = 0;
 let isPaused = true;
-const MAX_BODIES = 200; // maximum allowed bodies before abort
+const MAX_BODIES = 200; // maximum allowed bodies
 let simulationRunning = true;
-// === Orbit Controls ===
-// Allow click‐and‐drag to orbit and scroll to zoom:
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; // smooth motion
+controls.enableDamping = true; // smoothen motion?
 controls.dampingFactor = 0.05;
-controls.minDistance = 1; // how close you can zoom in
-controls.maxDistance = 100; // how far you can zoom out
+controls.minDistance = 1;
+controls.maxDistance = 100;
 
 const timeStepSlider = document.getElementById("time-step-slider");
 const timeStepValue = document.getElementById("time-step-value");
-// Time slider
 timeStepSlider.addEventListener("input", () => {
   TIME_STEP = Number(timeStepSlider.value);
   timeStepValue.textContent = TIME_STEP;
 });
-
-// Zoom in/out buttons
 const zoomInBtn = document.getElementById("zoom-in");
 const zoomOutBtn = document.getElementById("zoom-out");
 
 zoomInBtn.addEventListener("click", () => {
-  // Move camera 10% closer
   camera.position.multiplyScalar(0.9);
   controls.update();
 });
 
 zoomOutBtn.addEventListener("click", () => {
-  // Move camera 10% farther
   camera.position.multiplyScalar(1.1);
   controls.update();
 });
 
-// Camera positioning
 camera.position.set(0, 0, 20);
 
-// Lighting
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(5, 5, 5);
 scene.add(light);
@@ -83,8 +74,6 @@ resumeBtn.addEventListener("click", () => {
   pauseBtn.style.display = "";
 });
 
-// === Body Class ===
-// Defines an object with mass, position, velocity, and a visible trail
 class Body {
   constructor({ name, mass, radius, color, position, velocity }) {
     this.collisionCooldown = 0;
@@ -95,7 +84,6 @@ class Body {
     this.position = position.clone();
     this.acceleration = new THREE.Vector3();
 
-    //  sphere
     const geometry = new THREE.SphereGeometry(radius, 16, 16);
     const material = new THREE.MeshBasicMaterial({ color });
     this.mesh = new THREE.Mesh(geometry, material);
@@ -184,10 +172,9 @@ function handleCollisions(bodies) {
         B = bodies[j];
       if (A.collisionCooldown > 0 || B.collisionCooldown > 0) continue;
       const dist = A.position.distanceTo(B.position);
-
-      // collision if distance < sum of radii
+//colision check
       if (dist < A.radius + B.radius) {
-        // 1) Compute combined momentum
+        // Find combined momentum
         const totalMass = A.mass + B.mass;
         const velocity = A.velocity
           .clone()
@@ -195,7 +182,7 @@ function handleCollisions(bodies) {
           .add(B.velocity.clone().multiplyScalar(B.mass))
           .divideScalar(totalMass);
 
-        // 2) Number of fragments
+        //  Random Number of fragments, sorry, only so much I can calculate
         const N = Math.floor(Math.random() * 10)+5;
         const totalVolume = Math.pow(A.radius, 3) + Math.pow(B.radius, 3);
         const fragRadius = Math.cbrt(totalVolume / N);
@@ -207,9 +194,9 @@ function handleCollisions(bodies) {
             Math.random() - 0.5
           ).multiplyScalar((A.radius + B.radius) * 0.5);
 
-          // each fragment gets a share of mass
+          // each fragment gets a fraction of original mass
           const m = totalMass / N;
-          const r = Math.cbrt(m) * 0.1; // scale radius
+          const r = Math.cbrt(m) * 0.1;
 
           // small random velocity kick
           const vKick = offset
@@ -220,7 +207,7 @@ function handleCollisions(bodies) {
           fragments.push(
             new Body({
               name: `Frag`,
-              mass: totalMass / N, // keep mass share if you like
+              mass: totalMass / N, 
               radius: fragRadius*0.1,
               color: 0xff6600,
               position: A.position.clone().add(offset),
@@ -236,7 +223,7 @@ function handleCollisions(bodies) {
     }
   }
 
-  // remove collided bodies
+  // remove bodies marked for removal
   for (let b of toRemove) {
     const idx = bodies.indexOf(b);
     if (idx !== -1) {
@@ -247,22 +234,22 @@ function handleCollisions(bodies) {
     }
   }
 
-  // add new fragments
+  // add the new frags!
   bodies.push(...fragments);
 }
 
 // Random Color Hex
 function generateRandomHexColor() {
   while (true) {
-    const h = Math.random() * 360; // hue 0–360°
-    if (h >= 20 && h <= 40) continue; // exclude browns
-    const s = Math.random() * 50 + 50; // saturation 50–100%
-    const l = Math.random() * 40 + 30; // lightness 30–70%
+    const h = Math.random() * 360; 
+    if (h >= 20 && h <= 40) continue; // exclude browns! No-one wants ugle colours!
+    const s = Math.random() * 50 + 50; // saturation 50–100
+    const l = Math.random() * 40 + 30; // lightness 30–70
     return hslToHex(h, s, l);
   }
 }
 
-// HSL to HEX
+// HSL to HEX: hacky script to use what I know. My b
 function hslToHex(h, s, l) {
   s /= 100;
   l /= 100;
@@ -277,8 +264,7 @@ function hslToHex(h, s, l) {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-// === UI Handling ===
-// Handles user input for adding new celestial bodies dynamically
+//  UI Handling 
 document.getElementById("add-body").addEventListener("click", () => {
   const container = document.getElementById("body-form");
   const idPrefix = `body-${bodyCount}`;
@@ -317,7 +303,6 @@ document.getElementById("add-body").addEventListener("click", () => {
     nameEl.contentEditable = false;
   });
 
-  // Delete body UI block
   const deleteButton = block.querySelector(".delete-body");
   deleteButton.addEventListener("click", () => {
     block.remove();
@@ -325,11 +310,10 @@ document.getElementById("add-body").addEventListener("click", () => {
   });
 });
 
-// === Simulation Start ===
-// Gathers form input values and initializes Body objects
+// Starts our Simulation
 document.getElementById("start-simulation").addEventListener("click", () => {
-  // Reset the bodies array so we don’t keep stacking old ones
-  simulationRunning = true; // allow the next run
+ 
+  simulationRunning = true; 
   bodies = [];
 
   // Completely clear out the scene, then re‐add camera and lights
@@ -338,15 +322,12 @@ document.getElementById("start-simulation").addEventListener("click", () => {
   scene.add(light);
   scene.add(ambientLight);
 
-  // Loop over every existing “.object-block” (this skips any deleted ones!)
   const blocks = document.querySelectorAll(".object-block");
   blocks.forEach((block, i) => {
     const prefix = block.getAttribute("data-body-id");
-    // Read the user’s custom name (or default to “Body i+1”)
     const nameEl = block.querySelector(".body-name");
     const name = nameEl ? nameEl.innerText.trim() : `Body ${i + 1}`;
 
-    // read each input
     const mass = parseFloat(block.querySelector(`#${prefix}-mass`).value);
     const radius = parseFloat(block.querySelector(`#${prefix}-radius`).value);
     const color = new THREE.Color(
@@ -359,7 +340,6 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     const vy = parseFloat(block.querySelector(`#${prefix}-vy`).value) * 0.0001;
     const vz = parseFloat(block.querySelector(`#${prefix}-vz`).value) * 0.0001;
 
-    // Create a new Body with exactly those parameters
     const body = new Body({
       name,
       mass,
@@ -369,7 +349,6 @@ document.getElementById("start-simulation").addEventListener("click", () => {
       velocity: new THREE.Vector3(vx, vy, vz),
     });
 
-    // estimates a circular‐orbit trail length
     const r = body.position.length();
     const v = body.velocity.length() || 1; // avoid division by 0
     body.maxTrailLength = Math.floor((2 * Math.PI * r) / v / 3600);
@@ -377,11 +356,10 @@ document.getElementById("start-simulation").addEventListener("click", () => {
     bodies.push(body);
   });
 
-  // Restart the animation loop on the fresh “bodies” array
   runSimulation(bodies);
 });
 
-// === Animation Loop ===
+// Animation Loop
 // Computes gravity and updates body positions on each frame
 function runSimulation(bodies) {
   // draw the scene once at t=0
