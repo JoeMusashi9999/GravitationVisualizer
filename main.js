@@ -20,7 +20,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 const COLLISION_COOLDOWN_FRAMES = 3;
-let TIME_STEP = 10; // 10 second per frame
+let TIME_STEP = 0.5; // 10 second per frame
 const G = 6.6743e-11;
 let bodyCount = 0;
 let isPaused = true;
@@ -30,13 +30,13 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // smoothen motion?
 controls.dampingFactor = 0.05;
 controls.minDistance = 1;
-controls.maxDistance = 100;
+controls.maxDistance = 100; 
 
 const timeStepSlider = document.getElementById("time-step-slider");
 const timeStepValue = document.getElementById("time-step-value");
 timeStepSlider.addEventListener("input", () => {
   TIME_STEP = Number(timeStepSlider.value);
-  timeStepValue.textContent = TIME_STEP;
+  timeStepValue.textContent = TIME_STEP*10;
 });
 const zoomInBtn = document.getElementById("zoom-in");
 const zoomOutBtn = document.getElementById("zoom-out");
@@ -280,7 +280,7 @@ document.getElementById("add-body").addEventListener("click", () => {
     </div>
     <label>Color: <input type="color" id="${idPrefix}-color" value="${generateRandomHexColor()}" /></label>
     <label>Radius: <input type="number" id="${idPrefix}-radius" value="0.2" /></label>
-    <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e4" /></label>
+    <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e7" /></label>
     <label>Position X: <input type="number" id="${idPrefix}-x" value="${
     (bodyCount - 1) * 3
   }" /></label>
