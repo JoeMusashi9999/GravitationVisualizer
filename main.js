@@ -279,8 +279,8 @@ document.getElementById("add-body").addEventListener("click", () => {
       <button type="button" class="delete-body" style="color: red; background: none; border: none; font-size: 1.2em;">×</button>
     </div>
     <label>Color: <input type="color" id="${idPrefix}-color" value="${generateRandomHexColor()}" /></label>
-    <label>Radius: <input type="number" id="${idPrefix}-radius" value="0.2" /></label>
-    <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e7" /></label>
+    <label>Radius: <input type="number" id="${idPrefix}-radius" value="0.1" /></label>
+    <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e6" /></label>
     <label>Position X: <input type="number" id="${idPrefix}-x" value="${
     (bodyCount - 1) * 3
   }" /></label>
