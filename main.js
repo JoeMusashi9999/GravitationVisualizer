@@ -30,7 +30,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; // smoothen motion?
 controls.dampingFactor = 0.05;
 controls.minDistance = 1;
-controls.maxDistance = 100; 
+controls.maxDistance = 10; 
 
 const timeStepSlider = document.getElementById("time-step-slider");
 const timeStepValue = document.getElementById("time-step-value");
@@ -51,7 +51,7 @@ zoomOutBtn.addEventListener("click", () => {
   controls.update();
 });
 
-camera.position.set(0, 0, 20);
+camera.position.set(0, 0, 10);
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(5, 5, 5);
@@ -92,7 +92,7 @@ class Body {
 
     // trail - should be about 1 rotation. In future might make it dynamically calculated too but idc rn
     this.trail = [];
-    this.maxTrailLength = 500;
+    this.maxTrailLength = 1000;
     this.trailGeometry = new THREE.BufferGeometry();
     this.trailMaterial = new THREE.LineBasicMaterial({ color });
     this.trailLine = new THREE.Line(this.trailGeometry, this.trailMaterial);
@@ -282,7 +282,7 @@ document.getElementById("add-body").addEventListener("click", () => {
     <label>Radius: <input type="number" id="${idPrefix}-radius" value="0.1" /></label>
     <label>Mass: <input type="number" id="${idPrefix}-mass" value="1e6" /></label>
     <label>Position X: <input type="number" id="${idPrefix}-x" value="${
-    (bodyCount - 1) * 3
+    (bodyCount - 1) * -3
   }" /></label>
     <label>Position Y: <input type="number" id="${idPrefix}-y" value="0" /></label>
     <label>Position Z: <input type="number" id="${idPrefix}-z" value="0" /></label>,
